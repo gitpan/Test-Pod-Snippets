@@ -1,0 +1,11 @@
+Build.PL
+Changes
+MANIFEST
+META.yml # Will be created by "make dist"
+README
+lib/Test/Pod/Snippets.pm
+t/00-load.t
+t/pod.t
+Makefile.PL
+script/test-pod-snippets.PL
+SIGNATURE    Added here by Module::Build
