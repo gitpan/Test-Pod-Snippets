@@ -1,15 +1,20 @@
 ---
 name: Test-Pod-Snippets
-version: 0.01
+version: 0.02
 author:
   - 'Yanick Champoux <cpan@babyl.dyndns.org>'
 abstract: Generate tests from pod code snippets
 license: perl
+resources:
+  license: http://dev.perl.org/licenses/
 build_requires:
   Pod::Parser: 0
   Test::More: 0
 provides:
   Test::Pod::Snippets:
     file: lib/Test/Pod/Snippets.pm
-    version: 0.01
-generated_by: Module::Build version 0.2612
+    version: 0.02
+generated_by: Module::Build version 0.2806
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2
