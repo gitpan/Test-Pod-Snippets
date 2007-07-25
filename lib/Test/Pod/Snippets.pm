@@ -4,64 +4,55 @@ use warnings;
 use strict;
 use Carp;
 
-use Pod::Parser;
-use base qw/ Pod::Parser /;
+use Object::InsideOut;
+use Test::Pod::Snippets::Parser;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03_01';
 
-our $ignore = 0;
-our $ignore_all = 0;
-our $within_begin_test = 0;
+my @parser_of   :Field;
 
-sub initialize {
-    $ignore = 0;
-    $ignore_all = 0;
-    $_[0]->SUPER::initialize;
+my @do_verbatim  :Field :Default(1)      :Arg(extract_verbatim_bits);
+my @do_methods   :Field :Default(0)      :Arg(extract_methods);
+my @do_functions :Field :Default(0)      :Arg(extract_functions);
+my @object_name  :Field :Default('$thingy') :Arg(object_name);
+
+sub _init :Init {
+    my $self = shift;
+
+    $parser_of[ $$self ] = Test::Pod::Snippets::Parser->new;
+    $parser_of[ $$self ]->{tps} = $self;
 }
 
-sub command {
-    my ($parser, $command, $paragraph) = @_;
-
-    if ( $command eq 'for' ) {
-        my( $target, $directive, $rest ) = split ' ', $paragraph, 3;
-
-        return unless $target eq 'test';
-
-        return $ignore = 1 if $directive eq 'ignore';
-        return $ignore_all = 1 if $directive eq 'ignore_all';
-
-        $ignore = 0;
-        no warnings qw/ uninitialized /;
-        print {$parser->output_handle} join ' ', $directive, $rest;
-    }
-    elsif( $command eq 'begin' ) {
-        my( $target, $rest ) = split ' ', $paragraph, 2;
-        return unless $target eq 'test';
-        $within_begin_test = 1;
-        print {$parser->output_handle} $rest;
-    }
-    elsif( $command eq 'end' ) {
-        my( $target, $rest ) = split ' ', $paragraph, 2;
-        return unless $target eq 'test';
-
-        $within_begin_test = 0;
-    }
+sub get_object_name {
+    my $self = shift;
+    return $object_name[ $$self ];
 }
 
-sub textblock {
-    return unless $within_begin_test;
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    my ( $parser, $paragraph ) = @_;
-    print {$parser->output_handle} $paragraph;
+sub is_extracting_verbatim_bits { return $do_verbatim[ ${$_[0]} ] }
+sub is_extracting_methods       { return $do_methods[ ${$_[0]} ] }
+sub is_extracting_functions     { return $do_functions[ ${$_[0]} ] }
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+sub extract_verbatim_bits {
+    my $self = shift;
+    return $do_verbatim[ $$self ] = shift;
 }
-sub interior_sequence {}
 
-sub verbatim {
-    return if ( $ignore or $ignore_all ) and not $within_begin_test;
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    my ($parser, $paragraph) = @_;
+sub extract_methods {
+    my $self = shift;
+    return $do_methods[ $$self ] = shift;
+}
 
-    print {$parser->output_handle} $paragraph;
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+sub extract_functions {
+    my $self = shift;
+    return $do_functions[ $$self ] = shift;
 }
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,32 +76,49 @@ sub generate_snippets {
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+sub extract_from_string {
+    my ( $self, $string ) = @_;
+    open my $pod_fh, '<', \$string;
+    return $self->extract_snippets( $pod_fh );
+}
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 sub extract_snippets {
     my( $self, $file ) = @_;
 
-    unless( -f $file ) {
-        carp "couldn't read file '$file'";
-        return;
+    my $filename_call = 'GLOB' ne ref $file;
+
+    if( $filename_call and not -f $file ) {
+        croak "$file doesn't seem to exist";
     }
 
     my $output;
     open my $fh, '>', \$output;
-    $self->parse_from_file( $file, $fh );
+
+    if ( $filename_call ) {
+        $parser_of[ $$self ]->parse_from_file( $file, $fh );
+    } 
+    else {
+        $parser_of[ $$self ]->parse_from_filehandle( $file, $fh );
+    }
+
+    my $filename = $filename_call ? $file : 'unknown';
 
     return <<"END_TESTS";
-        use Test::More qw/ no_plan /;
+use Test::More qw/ no_plan /;
 
-        no warnings;
-        no strict;    # things are likely to be sloppy
+no warnings;
+no strict;    # things are likely to be sloppy
 
-        # tests extracted from '$file'
+ok 1 => 'the tests compile';   
 
-        ok 1 => 'the tests compile';   
+$output
 
-        $output
+ok 1 => 'we reached the end!';
 
-        ok 1 => 'we reached the end!';
 END_TESTS
+
 }
 
 sub snippets_ok {
@@ -247,13 +255,78 @@ ok 1 => 'begin works!';
 
 =head1 METHODS
 
-=head2 new
+=head2 new( I< %options > )
 
-    $tps = Test::Pod::Snippets->new
+Creates a new B<Test::Pod::Snippets> object. The method accepts
+the following options:
 
-=for test ;    
+=over
 
-Creates a new B<Test::Pod::Snippets> object.
+=item extract_verbatim_bits => $boolean 
+
+If set to true, extracts all verbatim text from the pod. 
+
+Set to true by default.
+
+=item extract_functions => $boolean
+
+If set to true, extracts function definitions from the pod.
+More specifically, Test::Pod::Snippets looks for a pod section 
+called FUNCTIONS, and assumes the title of all its direct
+subsections to be functions. 
+
+For example, the pod
+
+    =head1 FUNCTIONS
+
+    =head2 play_song( $artist, $song_title )
+
+    Play $song_title from $artist.
+
+    =head2 set_lighting( $intensity )
+
+    Set the room's light intensity (0 is pitch black 
+    and 1 is supernova white, -1 triggers the stroboscope).
+
+would generate the code
+
+    @result = play_song( $artist, $song_title );
+    @result = set_lightning( $intensity );
+
+Pod markups are automatically stripped from the headers. 
+
+=item extract_methods  => $boolean
+
+Same as I<extract_functions>, but with methods. In this
+case, Test::Pod::Snippets looks for a pod section called METHODS.
+The object used for the tests is assumed to be '$thingy',
+and its class to be given by the variable '$class'.
+
+For example, the pod
+
+    =head1 METHODS
+
+    =for test
+        $class = 'Amphibian::Frog';
+
+    =head2 new( $name )
+
+    Create a new froggy!
+
+    =head2 jump( $how_far )
+
+    Make it jumps.
+
+will produces
+
+    $class = 'Amphibian::Frog';
+    $thingy = $class->new( $name );
+    @result = $thingy->jump( $how_far );
+
+
+
+
+=back
 
 =head2 generate_snippets
 
@@ -270,13 +343,6 @@ the pod found within and create the test file F<t/code-snippets-xx.t>.
     $file = 'lib/Test/Pod/Snippets.pm';
 
     $test_script = $tps->extract_snippets( $file )
-
-=for test ;
-    open my $tc_fh, '<', 't/pod-snippets-01.t';
-    {
-        local $/ = undef;
-        is $test_script => <$tc_fh>, 'extract_snippets()';
-    }
 
 Returns the code of a test script containing the code snippets found
 in I<$file>.
