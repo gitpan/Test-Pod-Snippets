@@ -6,7 +6,7 @@ use warnings;
 use Pod::Parser;
 use base qw/ Pod::Parser /;
 
-our $VERSION = '0.03_01';
+our $VERSION = '0.03_02';
 
 sub initialize {
     $_[0]->SUPER::initialize;
@@ -85,7 +85,6 @@ $DB::single = 1;
 
         if ( $parser->{tps_method_level} ) {
             if ( $paragraph =~ /^new/ ) {
-                $paragraph = '$class->'.$paragraph;
                 print {$parser->output_handle}
                     $parser->{tps}->get_object_name,
                     ' = $class->', $paragraph, ";\n";
