@@ -5,12 +5,14 @@ META.yml # Will be created by "make dist"
 README
 lib/Test/Pod/Snippets.pm
 lib/Test/Pod/Snippets/Parser.pm
-pod2snippets
+podsnippets
 t/00-load.t
 t/01-general.t
 t/02-extractions.t
 t/pod.t
 t/99signature.t
+t/generate_test.t
 Makefile.PL
 script/test-pod-snippets.PL
+t/new.t
 SIGNATURE    Added here by Module::Build
