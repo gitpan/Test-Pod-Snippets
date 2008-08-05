@@ -9,7 +9,7 @@ use Test::Pod::Snippets::Parser;
 use Module::Locate qw/ locate /;
 use Params::Validate qw/ validate_with validate /;
 
-our $VERSION = '0.04';
+our $VERSION = '0.04.01';
 
 #<<<
 my @parser_of   :Field :Get(parser);
@@ -234,7 +234,6 @@ sub runtest {
 
     my $code = $self->generate_test( @args );
 
-    print $code and die;;
     eval $code;
 
     if ( $@ ) {
@@ -603,9 +602,9 @@ L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Pod-Snippets>.
 
 The code of this module is tracked via a Git repository.
 
-Git url:  git://babyl.dyndns.org/test-code-snippets.git
+Git url:  git://babyl.dyndns.org/test-pod-snippets.git
 
-Web interface:  http://babyl.dyndns.org/git/test-code-snippets.git
+Web interface:  http://babyl.dyndns.org/git/test-pod-snippets.git
 
 =head1 SUPPORT
 

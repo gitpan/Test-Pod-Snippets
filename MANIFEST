@@ -15,4 +15,3 @@ t/generate_test.t
 Makefile.PL
 script/test-pod-snippets.PL
 t/new.t
-SIGNATURE    Added here by Module::Build
