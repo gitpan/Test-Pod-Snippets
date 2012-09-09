@@ -1,26 +1,45 @@
 ---
-name: Test-Pod-Snippets
-version: 0.06
+abstract: 'Generate tests from pod code snippets'
 author:
   - 'Yanick Champoux <yanick@cpan.org>'
-abstract: Generate tests from pod code snippets
-license: perl
-resources:
-  license: http://dev.perl.org/licenses/
 build_requires:
-  Module::Locate: 0
-  Object::InsideOut: 0
-  Params::Validate: 0
-  Pod::Parser: 0
-  Test::More: 0
+  File::Find: 0
+  File::Temp: 0
+  Module::Build: 0.3601
+  Scalar::Util: 0
+  Test::More: 0.94
+  perl: 5.004
+configure_requires:
+  Module::Build: 0.3601
+dynamic_config: 0
+generated_by: 'Dist::Zilla version 4.300010, CPAN::Meta::Converter version 2.120630'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: Test-Pod-Snippets
 provides:
   Test::Pod::Snippets:
     file: lib/Test/Pod/Snippets.pm
-    version: 0.06
+    version: 0.07
   Test::Pod::Snippets::Parser:
-    file: lib/Test/Pod/Snippets/Parser.pm
-    version: 0.06
-generated_by: Module::Build version 0.280801
-meta-spec:
-  url: http://module-build.sourceforge.net/META-spec-v1.2.html
-  version: 1.2
+    file: lib/Test/Pod/Snippets.pm
+    version: 0.07
+requires:
+  Carp: 0
+  Module::Locate: 0
+  Moose: 0
+  MooseX::SemiAffordanceAccessor: 0
+  Params::Validate: 0
+  Pod::Parser: 0
+  parent: 0
+  strict: 0
+  warnings: 0
+resources:
+  bugtracker: http://rt.cpan.org/Public/Dist/Display.html?Name=Test-Pod-Snippets
+  homepage: http://search.cpan.org/dist/Test-Pod-Snippets/
+  repository: https://github.com/yanick/test-pod-snippets.git
+version: 0.07
+x_author_pledge:
+  version: 1
+x_authority: cpan:YANICK
